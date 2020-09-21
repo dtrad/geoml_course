@@ -1,0 +1,348 @@
+---
+title: "WTI Price Prediction with Facebook Prophet"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+    css: css/style.css
+    logo: img/logo.png
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+# API
+library(Quandl)
+
+# App
+library(flexdashboard)
+library(shiny)
+library(shinyjs)
+library(shinyWidgets)
+
+# Time Series
+library(lubridate)
+library(timetk)
+
+# Visualization
+library(plotly)
+
+# Core
+library(tidyverse)
+library(tidyquant)
+library(data.table)
+
+# Model
+library(tidymodels)
+library(modeltime)
+library(prophet)
+
+source("scripts/utils.R")
+```
+
+
+Input Parameters {.sidebar}
+------------------------------------------------------------
+
+```{r sidebar, message=FALSE}
+useShinyjs(rmd = TRUE)
+
+div(
+    id = "about-app",
+    class = "text-center",
+    h4(strong("About the App")),
+    "WTI Crude Oil predictions are done with the use of the",
+    a(href = "https://facebook.github.io/prophet/",
+      target = "_blank",
+      "Facebook Prophet"),
+    "forecasting algorithm."
+)
+
+hr()
+div(
+  class = "text-center",
+  h4(strong("Model Parameters"))
+)
+
+dateRangeInput(
+  inputId = "date_range", 
+  label   = h4("Date Range"),
+  start   = "2005-01-01", 
+  end     = today(), 
+  min     = "1986-01-02", 
+  max     = today(), 
+  startview = "year")
+
+
+pickerInput(inputId = "picker_seasonality",
+            label   = h4("Seasonality"),
+            choices = c("Additive" = "additive", 
+                        "Multiplicative" = "multiplicative"), 
+            selected = "additive", 
+            multiple = FALSE,
+            options  = list(
+              `actions-box` = TRUE,
+              size = 10
+             )
+)
+
+sliderInput(
+  inputId = "slider_test_size",
+  label = h4("Test Set Size (in Months)"),
+  min = 1,
+  max = 24,
+  value = 12,
+  step = 1
+)
+
+hr()
+# br()
+
+div(
+  class = "text-center",
+  h4(strong("Horizon Selection"))
+)
+
+shinyWidgets::pickerInput(
+  inputId  = "picker_time_unit", 
+  label    = h4("Select Time Unit"), 
+  choices  = c("Day" = "day", 
+               "Week" = "week", 
+               "Month" = "month", 
+               "Quarter" = "quarter", 
+               "Year" = "year"), 
+  selected = "month", 
+  multiple = FALSE,
+  options  = list(
+    `actions-box` = TRUE,
+    size = 10
+  )
+)
+
+numericInput(
+    inputId = "forecast_horizon",
+    label = h4("Horizon (in Time Units)"),
+    min = 1,
+    value = 12
+)
+
+br()
+
+div(
+    class = "text-center",
+    actionButton(inputId = "apply",label = "Apply",icon = icon(name = "play", lib = "font-awesome")),
+    actionButton(inputId = "reset", label = "Reset", icon = icon("sync")),
+    br(),
+    hr(),
+    "Learn more at:", 
+    br(),
+    a(href = "https://www.crewes.org/", 
+      class = "btn btn-primary", target="_blank", "CREWES")
+)
+
+observeEvent(eventExpr = input$reset, handlerExpr = {
+  
+  updateDateRangeInput(
+    session = session,
+    inputId = "date_range",
+    start = "2005-01-01",
+    end = today()
+  )
+  
+  updatePickerInput(
+    session = session,
+    inputId = "picker_seasonality",
+    selected = "additive"
+  )
+  
+  updateSliderInput(
+    session = session,
+    inputId = "slider_test_size",
+    value = 12
+  )
+  
+  updatePickerInput(
+    session = session,
+    inputId = "picker_time_unit",
+    selected = "month"
+  )
+  
+  updateNumericInput(
+    session = session,
+    inputId = "forecast_horizon",
+    value = 12
+  )
+  
+  delay(ms = 300, expr = {
+    click(id = "apply")
+  })
+  
+})
+
+```
+
+```{r data}
+# Quandl.api_key("Add your key here")
+Quandl.api_key(Sys.getenv("QUANDL_API_KEY"))
+
+wti_prices <- eventReactive(
+  eventExpr = input$apply,
+  valueExpr = {
+    Quandl(
+      code = "EIA/PET_RWTC_D",
+      start_date = input$date_range[1], 
+      end_date = input$date_range[2], 
+      order = "asc") %>% 
+      as_tibble() %>% 
+      set_time_unit(time_unit = input$picker_time_unit)
+  },
+  ignoreNULL = FALSE
+)
+
+splits <- eventReactive(
+  eventExpr = input$apply,
+  valueExpr = {
+    wti_prices() %>%
+      time_series_split(assess = str_glue("{input$slider_test_size} months"), cumulative = TRUE)
+  },
+  ignoreNULL = FALSE
+)
+
+model <- eventReactive(
+  eventExpr = input$apply,
+  valueExpr = {
+    splits() %>% 
+      fit_test(seasonality = input$picker_seasonality) %>% 
+      modeltime_calibrate(testing(splits()))
+  },
+  ignoreNULL = FALSE
+)
+
+forecast_test <- eventReactive(
+  eventExpr = input$apply,
+  valueExpr = {
+     model() %>% 
+      modeltime_forecast(actual_data = wti_prices())
+  },
+  ignoreNULL = FALSE
+)
+
+forecast_wti <- eventReactive(
+  eventExpr = input$apply,
+  valueExpr = {
+    model() %>%
+      modeltime_refit(wti_prices()) %>%
+      modeltime_forecast(h = input$forecast_horizon, actual_data = wti_prices())
+  },
+  ignoreNULL = FALSE
+)
+```
+
+```{r}
+
+```
+
+Column {data-width=600}
+-----------------------------------------------------------------------
+
+### Price Forecasting
+
+```{r}
+
+renderPlotly({
+  forecast_wti() %>% 
+    plot_modeltime_forecast(.interactive = T,
+                            .plotly_slider = T,
+                            .title = "Forecast Predictions",
+                            .x_lab = "Date",
+                            .y_lab = "WTI Crude Oil Price (USD)",
+                            .color_lab = "",
+                            .legend_max_width = 6)
+})
+
+```
+
+
+
+Column {data-width=400}
+-----------------------------------------------------------------------
+
+### Metrics on Test Set
+
+```{r}
+output$plotly_test <- renderPlotly({
+  forecast_test() %>% 
+    plot_modeltime_forecast(.interactive = TRUE,
+                            .title = "Forecast Predictions on Test Set",
+                            .x_lab = "Date",
+                            .y_lab = "WTI Crude Oil Price (USD)",
+                            .color_lab = "",
+                            .legend_max_width = 6)
+})
+
+plotlyOutput(outputId = "plotly_test")
+
+```
+
+### RMSE
+
+```{r}
+metrics <- reactive({
+  model() %>% 
+    modeltime_accuracy()
+})
+```
+
+```{r}
+renderValueBox({
+  
+  valueBox(
+    value   = metrics()$rmse %>% round(2), 
+    caption = "Root mean squared error", 
+    icon    = case_when(metrics()$rmse > 20 ~ "fa-thumbs-down",
+                        metrics()$rmse > 15 ~ "fa-meh",
+                        TRUE ~ "fa-thumbs-up"), 
+    color   = case_when(metrics()$rmse > 20 ~ "danger",
+                        metrics()$rmse > 15 ~ "warning",
+                        TRUE ~ "success"))
+  
+})
+
+```
+
+### MAPE
+
+```{r}
+renderValueBox({
+  
+  valueBox(
+    value   = metrics()$mape %>% round(2), 
+    caption = "Mean absolute percentage error", 
+    icon    = case_when(metrics()$mape > 50 ~ "fa-thumbs-down",
+                        metrics()$mape > 20 ~ "fa-meh",
+                        TRUE ~ "fa-thumbs-up"), 
+    color   = case_when(metrics()$mape > 50 ~ "danger",
+                        metrics()$mape > 20 ~ "warning",
+                        TRUE ~ "success"))
+  
+})
+
+```
+
+### RSQ
+
+```{r}
+renderValueBox({
+  
+  valueBox(
+    value   = metrics()$rsq %>% round(3), 
+    caption = "Mean absolute percentage error", 
+    icon    = case_when(metrics()$rsq > 0.4 ~ "fa-thumbs-down",
+                        metrics()$rsq > 0.2 ~ "fa-meh",
+                        TRUE ~ "fa-thumbs-up"), 
+    color   = case_when(metrics()$rsq > 0.4 ~ "danger",
+                        metrics()$rsq > 0.2 ~ "warning",
+                        TRUE ~ "success"))
+  
+})
+
+```

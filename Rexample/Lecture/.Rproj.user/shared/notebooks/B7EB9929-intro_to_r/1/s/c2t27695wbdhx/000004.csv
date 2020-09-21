@@ -1,0 +1,8 @@
+"0","library(plotly)"
+"0",""
+"0","g <- df %>% "
+"0","  ggplot(aes(x = Sepal.Length, y = Petal.Length, color = Cluster)) +"
+"0","  geom_point(size = 2) +"
+"0","  theme_bw()"
+"0",""
+"0","ggplotly(g)"

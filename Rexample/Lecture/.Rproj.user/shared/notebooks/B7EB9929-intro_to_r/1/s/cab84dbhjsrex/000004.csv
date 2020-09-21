@@ -1,0 +1,4 @@
+"0","ggplot(data = data, aes(x = Sepal.Length, y = Petal.Length, color = Species)) +"
+"0","  geom_point(size = 2) +"
+"0","  labs(title = ""My First Plot in R"") +"
+"0","  theme_bw()"

@@ -1,0 +1,143 @@
+/* #382d90 */
+
+/* Navigation bar */
+.navbar-inverse {
+    /*
+    background: rgb(2,0,36);
+    background: linear-gradient(0deg, rgba(2,0,36,1) 0%, rgba(0,59,141,1) 100%, rgba(0,212,255,1) 100%);
+    */
+    background: linear-gradient(#04519b, #03376a);
+    border-color: #03376a;
+    
+}
+
+.navbar-brand {
+    font-family: 'Montserrat', sans-serif;
+    margin-left: 15px;
+}
+
+h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
+    font-family: 'Montserrat', sans-serif;
+    color: #111111;
+}
+
+h4 {
+    color: #0000008a;
+}
+
+body {
+    font-family: 'Roboto', sans-serif;
+}
+
+/* Chart Title */
+.chart-title {
+    /*
+    border-bottom: 1px solid #382d90;
+    background-color: #382d90;
+    */
+    background: #044c91;
+    color: #fff;
+    text-align: center;
+    font-size: 16px;
+}
+
+/* Body changes */
+body {
+    background: #ffffff;
+}
+
+/* Sidebar */
+.section.sidebar {
+    top: 53px;
+    background-color: #aab4be4d;
+    box-shadow: 2px 2px #cccccc;
+}
+
+/* Logo */
+.navbar-logo {
+    width: 200px;
+    height: auto;
+    margin-right: 25px;
+}
+
+/* Tabs */
+.nav-tabs-custom > .nav-tabs {
+    margin: 0;
+    background: #044c91;
+    border-bottom: 1px solid #044c91;
+}
+
+.nav-tabs-custom > .nav-tabs > li.active > a {
+    background-color: #fff;
+    color: #000;
+}
+
+.nav-tabs-custom > .nav-tabs > li:not(.active) > a {
+    background-color: #044c91;
+    color: #ccc;
+}
+.nav-tabs-custom > .nav-tabs > li.active:hover > a {
+    background-color: #fff;
+    color: #000;
+    font-weight: bold;
+}
+
+.nav-tabs-custom > .nav-tabs > li > a, .nav-tabs-custom > .nav-tabs > li > a:hover {
+    background: transparent;
+    margin: 0;
+    color: #fff;
+}
+
+/* Buttons */
+.btn-primary {
+    color: #ffffff;
+    background: linear-gradient(#04519b, #03376a);
+    border-color: transparent;
+    border-radius: 5px;
+}
+
+.btn-default {
+    color: #ffffff;
+    background-color: #03376a;
+    border-color: #03376a;
+    border-radius: 5px;
+}
+
+.btn-default:focus,.btn-default.focus {
+    color: #ffffff;
+    background-color: #04519b;
+    border-color: #04519b;
+}
+
+.btn-default:hover {
+    color: #ffffff;
+    background-color: #04519b;
+    border-color: #04519b;
+}
+
+.btn-default:active,.btn-default.active,.open>.dropdown-toggle.btn-default {
+    color: #ffffff;
+    background-color: #04519b;
+    border-color: #04519b;
+}
+
+.btn-default:active:hover,.btn-default.active:hover,.open>.dropdown-toggle.btn-default:hover,.btn-default:active:focus,.btn-default.active:focus,.open>.dropdown-toggle.btn-default:focus,.btn-default:active.focus,.btn-default.active.focus,.open>.dropdown-toggle.btn-default.focus {
+    color: #ffffff;
+    background-color: #04519b;
+    border-color: #04519b;
+}
+
+.btn-default:active,.btn-default.active,.open>.dropdown-toggle.btn-default {
+    background-image: none
+}
+
+.bootstrap-switch .bootstrap-switch-handle-off.bootstrap-switch-primary, .bootstrap-switch .bootstrap-switch-handle-on.bootstrap-switch-primary {
+    color: #fff;
+    background: #090909;
+}
+
+/* Text Box */
+#about-app {
+    background: #fcfcfc;
+    border-radius: 15px;
+}

@@ -1,0 +1,5 @@
+"0","data <- tibble::as_tibble(iris)"
+"0","datatable("
+"0","  data,"
+"0","  options = list(scrollY = 400)"
+"0",")"

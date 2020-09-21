@@ -1,0 +1,194 @@
+---
+title: "My First Flexdashboard App"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+    css: css/mystyle.css
+    logo: img/logo.png
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+# APP
+library(flexdashboard)
+library(shiny)
+library(shinyWidgets)
+library(shinyjs)
+
+# VISUALIZATION
+library(plotly)
+
+# TABLES
+library(DT)
+
+# DATASET
+library(datasets)
+```
+
+```{r}
+data(iris)
+```
+
+Sidebar {.sidebar}
+-----------------------------------------------------------------------
+
+```{r}
+useShinyjs(rmd = TRUE)
+
+div(
+  class = "text-center",
+  "My first flexdashboard app calculate the species of flowers clusters from the iris dataset."
+)
+hr()
+
+div(
+  class = "text-center",
+  h3(strong("Clustering"))
+)
+
+pickerInput(
+  inputId = "features",
+  label = h4("Features for Clustering"),
+  choices = colnames(iris[,1:4]),
+  selected = colnames(iris[,1:4]),
+  multiple = TRUE,
+  options = pickerOptions(
+    actionsBox = TRUE,
+    selectedTextFormat = "count > 2",
+    size = 10
+  )
+)
+
+# renderPrint(input$features)
+
+numericInput(
+  inputId = "n_clusters",
+  label = h4("Number of Clusters"),
+  value = 3,
+  min = 2,
+  max = 10
+)
+
+# renderPrint(input$n_clusters)
+hr()
+pickerInput(
+  inputId = "x",
+  label = "X-Axis",
+  choices = colnames(iris[,1:4]),
+  selected = "Sepal.Length",
+  options = pickerOptions(size = 10)
+)
+
+pickerInput(
+  inputId = "y",
+  label = "Y-Axis",
+  choices = colnames(iris[,1:4]),
+  selected = "Petal.Length",
+  options = pickerOptions(size = 10)
+)
+
+hr()
+actionButton(
+  inputId = "apply",
+  label = "Apply",
+  icon = icon(name = "play", lib = "font-awesome")
+)
+
+actionButton(
+  inputId = "reset",
+  label = "Reset",
+  icon = icon(name = "sync")
+)
+
+observeEvent(eventExpr = input$reset, handlerExpr = {
+  
+  updatePickerInput(
+    session = session,
+    inputId = "features",
+    selected = colnames(iris[,1:4])
+  )
+  
+  updateNumericInput(
+    session = session,
+    inputId = "n_clusters",
+    value = 3
+  )
+  
+  updatePickerInput(
+    session = session,
+    inputId = "x",
+    selected = "Sepal.Length"
+  )
+  
+  updatePickerInput(
+    session = session,
+    inputId = "y",
+    selected = "Petal.Length"
+  )
+  
+  delay(ms = 300, expr = {
+    click(id = "apply")
+  })
+  
+})
+
+```
+
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### Clustering
+
+```{r}
+
+selected <- reactive({
+  iris[,input$features]
+})
+
+cluster_data <- eventReactive(eventExpr = input$apply, valueExpr = {
+  clusters <- kmeans(x = selected(), centers = input$n_clusters)
+
+  iris %>% 
+    cbind(clusters$cluster) %>% 
+    rename(Cluster = "clusters$cluster") %>% 
+    mutate(Cluster = factor(Cluster))
+}, ignoreNULL = FALSE)
+```
+
+
+```{r}
+renderPlotly({
+  x = input$x
+  y = input$y
+  g <- cluster_data() %>% 
+    ggplot(aes_string(x = x, y = y, color = "Cluster")) +
+    geom_point(size = 2) + 
+    theme_bw()
+  
+  ggplotly(g)
+})
+
+
+```
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Table
+
+```{r}
+DT::renderDataTable(expr = {
+  cluster_data()
+}, options = list(scrollY = 700,
+                 lengthMenu = c(50, 100, 150))
+)
+
+# datatable(
+#   data = cluster_data,
+#   options = list(scrollY = 700,
+#                  lengthMenu = c(50, 100, 150))
+# )
+```
+

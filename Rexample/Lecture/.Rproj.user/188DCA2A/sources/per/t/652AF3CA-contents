@@ -1,0 +1,359 @@
+---
+title: "Introduction to R"
+author: "Marcelo Guarido de Andrade"
+output:
+  prettydoc::html_pretty:
+    theme: leonids
+    highlight: github
+    toc: true
+    toc_depth: 2
+---
+
+<style>
+    h2 {
+        color: #044c91;
+    }
+</style>
+
+This `Rmarkdowm` is presenting an introduction to R. We are going start from the simple math operations and will go up to using [python](https://www.python.org/) inside `R`.
+
+## Simple operations
+
+`R` can be used as a calculator. We can add, subtract, multiply, divide, and do more complex math operations very easily.
+
+```{r Simple Op}
+1 + 1
+2 - 1
+3 * 2
+9 / 3
+2 ** 5
+```
+
+In base `R`, there are some more complex functions for other types of operations.
+
+```{r SQRT}
+sqrt(144)
+pi
+sqrt(pi)
+```
+
+We can make operations on objects.
+
+```{r More operations}
+a <- 3
+b <- 5
+c <- pi
+
+x <- (a - b) * sinpi(c)
+print(x)
+```
+
+## Lists and arrays
+
+In `R`, there is not a big difference between lists and arrays. Actually, they have the same properties.
+
+```{r Lists}
+x <- list(1, 2, 3, 4)
+print(paste0("List:", x))
+
+print(x[2])
+```
+
+```{r Arrays}
+as.array(x)
+```
+
+What happens if we set each element of a list to be a data frame?
+
+```{r List DF}
+x = list(iris, cars)
+```
+
+Now, converting the list to array:
+
+```{r Array DF}
+y = as.array(x)
+```
+
+Both are understood as a list.
+
+## How to install a package?
+
+In [RStudio](https://rstudio.com/), there are several ways to install a package. 
+
+- Go to the tab *Packages* and select *Install*
+- Go to *Tools* and select *Install packages*
+- Or from the R command `install.packages`
+
+```{r Install Package, eval=FALSE}
+install.packages("DT")
+```
+
+## Importing installed packages
+
+To import libraries to your work environment, use the function `library`.
+
+```{r Importing Libraries}
+library("DT")
+```
+
+Let's load a `csv` file from the disk:
+
+```{r Load Data}
+data <- read.csv("data/FL_insurance_sample.csv")
+head(data)
+```
+
+## Functions in R
+
+Importing a library to the environment implies on having access to its set of functions. As `R` is a functional language, it is simple to use functions. Above we show how to install and load the library `DT`, good for printing data tables. Now, let's use the function `datatable` to do a fancier print of the data frame:
+
+```{r Data Table}
+datatable(
+  data = data[1:100,],
+  options = list(scrollY = 400)
+)
+```
+
+If you need to know more about the function, you can access its documentation by using the interrogation mark and the name of the function:
+
+```{r Help, eval=FALSE}
+?datatable
+```
+
+You can use it directly in the *console*.
+
+To use a library without importing it to the environment (useful if you are using a single function just once), use the syntax `<name of library>::<function>`:
+
+```{r DT Data Table}
+DT::datatable(
+  data = data[1:100,],
+  options = list(scrollY = 400)
+)
+```
+
+In `R` there are a large variety of libraries for different goals, that goes from loading data, to complex math and statistical applications.
+
+## Plotting with ggplot2
+
+`ggplot2` is a powerful visualization library and is one of the most used in the data science world. It comes with the `r-project` installation, but you can install it again to include updates.
+
+```{r Import GGplot}
+library(ggplot2)
+```
+
+We can see the list of built-in datasets in `R` by using the function `data`:
+
+```{r List of data, eval=FALSE}
+data()
+```
+
+
+Let's use the *iris* dataset to make some plots:
+
+```{r Iris}
+data <- tibble::as_tibble(iris)
+datatable(
+  data,
+  options = list(scrollY = 400)
+)
+```
+
+To access columns from a data frame, it can be done by specifying the column name between brackets, i.e,, `data[,"Sepal.Length"]`, or by using the dollar sign symbol `data$Sepal.Length`:
+
+```{r Print columns}
+print(data[,"Sepal.Length"])
+print(data$Sepal.Length)
+```
+
+
+Let's make a scatter plot of `Sepal.Length` vs `Petal.Length`, colored by `Species`
+
+```{r First plot}
+ggplot(data = data, aes(x = Sepal.Length, y = Petal.Length, color = Species)) +
+  geom_point(size = 2) +
+  labs(title = "My First Plot in R") +
+  theme_bw()
+```
+
+We can point the plot to an object and use it later:
+
+```{r Store Plot}
+g <- ggplot(data = data, aes(x = Sepal.Length, y = Petal.Length, color = Species)) +
+  geom_point(size = 2) +
+  labs(title = "My First Plot in R") +
+  theme_bw()
+```
+
+One of the advantages of doing that is to convert the static plot to an interactive plot using the library `Plotly` and the function `ggplotly`:
+
+```{r Plotly}
+plotly::ggplotly(g)
+```
+
+## The "Pipe" (%>%) function
+
+A very powerful tool in `R` is the **pipe** function, used as the symbol `%>%`. It works in a similar way as the `|` function in Linux: it sends the output of a command as an input in the next command.
+
+```
+cat file.txt | grep word 
+```
+
+In `R`, the pipe function is used quite often and helps to make coding shorter and simpler. As an example, let's save the names of the 4 first columns of the *iris* dataset to an object:
+
+```{r Iris Colnames}
+names <- iris %>% 
+  colnames() %>% 
+  .[1:4]
+
+print(names)
+```
+
+As another example, let's do a clustering analysis of the *iris* dataset. We are going to use the flowers measurements to divide the data into groups (clusters) and check if they match the plant classification ("Species"). For this modeling, we will use the base function `kmeans` (run `?kmeans` in the console to learn more about this function). After, we will bind the results to the *iris* data, rename the column name, and convert this column to factor format:
+
+```{r Clustering, warning=FALSE, message=FALSE}
+library(tidyverse)
+
+# Create a cluster object
+clusters = kmeans(
+  x = iris[,names], # Only plant measurements from iris data
+  centers = 3,      # Number of clusters
+  iter.max = 100    # Max number of iterations
+)
+
+# Binding clusters to data
+df <- iris %>% 
+  cbind(clusters$cluster) %>% 
+  rename(Cluster = "clusters$cluster") %>% 
+  mutate(Cluster = factor(Cluster))
+```
+
+Now we can plot and compare our results with the real categories:
+
+```{r Plot Clusters, warning=FALSE, message=FALSE}
+library(plotly)
+
+g <- df %>% 
+  ggplot(aes(x = Sepal.Length, y = Petal.Length, color = Cluster)) +
+  geom_point(size = 2) +
+  theme_bw()
+
+ggplotly(g)
+```
+
+## Python in R
+
+`Python` can be used directly from `R` thanks to the library [Reticulate](https://rstudio.github.io/reticulate/). To install it, run in your console:
+
+```
+install.packages("reticulate")
+```
+
+By importing it, you create a connection to your *python* installation:
+
+```{r Reticulate}
+library(reticulate)
+knitr::knit_engines$set(python = reticulate::eng_python)
+```
+
+After loading the library, you can create a chunk in python ({python}), and run it as in a `Jupyter Notebook`:
+
+```{python, warning=FALSE, message=FALSE}
+import pandas as pd
+import matplotlib.pyplot as plt
+```
+
+We can "transfer" data from `R` to `Python`, and vice-versa:
+
+```{python}
+df = r.data
+df.head
+```
+
+```{python}
+my_name = "Marcelo"
+```
+
+```{r Data from Python}
+name <- py$my_name
+print(name)
+```
+
+We can even do plots in python:
+
+```{python, warning=FALSE, message=FALSE}
+import seaborn as sns
+import os
+import PyQt5
+# os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = 'c:/Users/marle/anaconda3/Library/plugins/platforms'
+
+fg = sns.FacetGrid(data = df, hue = 'Species', aspect = 1.61)
+fg.map(plt.scatter, 'Sepal.Length', 'Petal.Length').add_legend()
+plt.show()
+```
+
+Or use the `python` functions directly in `R`:
+
+```{r Python in R, message=FALSE, warning=FALSE, fig.width=10, eval=FALSE, echo=TRUE, results='asis'}
+#importing required Python libraries/modules
+sns <- import('seaborn')
+plt <- import('matplotlib.pyplot')
+pd <- import('pandas')
+
+#building a seaborn pairplot using pairplot()
+sns$pairplot(r_to_py(iris), hue = 'Species')
+
+#display the plot
+plt$show()
+```
+
+
+## Other languages
+
+### Bash
+
+```{bash Bash}
+echo "Hello Bash!"
+mkdir save_here
+cp ./data/FL_insurance_sample.csv ./save_here/FL_insurance_sample.csv
+```
+
+### SQL
+
+```{r DBI}
+library(DBI)
+db = dbConnect(RSQLite::SQLite(), dbname = "data/chinook.db")
+dbListTables(db)
+```
+
+```{sql SQL, connection=db, max.print = 20}
+SELECT * FROM employees
+```
+
+```{r Close SQL}
+dbDisconnect(db)
+```
+
+### Rcpp (C++)
+
+```{Rcpp C++, eval=FALSE}
+#include <Rcpp.h>
+using namespace Rcpp;
+
+// [[Rcpp::export]]
+NumericVector timesTwo(NumericVector x) {
+  return x * 2;
+}
+```
+
+```{r x2, eval=FALSE}
+timesTwo(5)
+```
+
+### CSS
+
+```{css CSS}
+h3 {
+  color: #F36170;
+}
+```
