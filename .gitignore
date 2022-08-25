@@ -1,0 +1,15 @@
+*~
+*core*
+*mat*
+dat
+*tar.gz
+*.o
+*.asv
+__pycache__
+Untitled*
+geoml/Data
+.ipynb_checkpoints/
+images/
+my_logs
+desktop.ini
+
