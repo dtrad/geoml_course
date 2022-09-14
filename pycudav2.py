@@ -34,7 +34,7 @@ def speedcomparison():
     print('total time to compute on GPU: %f' % (t2 - t1))
     print('Is the host computation the same as the GPU computation? : {}'.format(np.allclose(from_device, host_data_2x) ))
 
-print "First time GPU is slow because it needs to compile the code."
+print("First time GPU is slow because it needs to compile the code.")
 
 speedcomparison()
 speedcomparison()
